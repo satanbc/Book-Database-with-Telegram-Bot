@@ -1,0 +1,89 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
+	<title>Book Directory</title>
+</head>
+
+<body>
+
+<div class="container">
+	<h3>Book Directory</h3>
+	<hr>
+
+	<a th:href="@{/books/showFormForAdd}"
+	   class="btn btn-primary btn-sm mb-3">
+		Add a book
+	</a>
+
+	<a th:href="@{/books/showFormForSort}"
+	   class="btn btn-success btn-sm mb-3">
+		Sort by rating
+	</a>
+
+	<form th:action="@{/books/search}" method="get">
+		<input type="text" name="keyword" th:value="${keyword}"  placeholder="Find by book name" size="50" >
+		<button type="submit" class="btn btn-info" >Search</button>
+	</form>
+
+	<br>
+	
+	<table class="table table-bordered table-striped">
+		<thead class="thead-dark">
+			<tr>
+				<th>Name</th>
+				<th>Author</th>
+				<th>Release year</th>
+				<th>Page count</th>
+				<th>Rating</th>
+				<th>Description</th>
+				<th>Series</th>
+				<th>Characters</th>
+				<th>Action</th>
+			</tr>
+		</thead>
+
+		<tbody>
+			<tr th:each="tempBook : *{books}">
+			
+				<td th:text="${tempBook.name}"></td>
+				<td th:text="${tempBook.author.name}"></td>
+				<td th:text="${tempBook.release_year}"></td>
+				<td th:text="${tempBook.page_count}"></td>
+				<td>
+					<a th:text="${tempBook.rating}"></a>
+					&#9733;
+				</td>
+				<td th:text="${tempBook.description}"></td>
+				<td th:text="${tempBook.series.name}"></td>
+				<td>
+					<div th:each="tempCharacter : ${tempBook.characters}">
+						<p th:text="${tempCharacter.name}"></p>
+					</div>
+				</td>
+				<td>
+					<a th:href="@{/books/delete(bookId=${tempBook.id})}"
+					    class="btn btn-danger btn-sm"
+						onclick="if (!(confirm('Are you sure you want to delete this book?'))) return false">
+						Delete
+					</a>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	
+</div>
+	
+</body>
+</html>
+
+
+

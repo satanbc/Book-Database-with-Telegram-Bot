@@ -1,0 +1,78 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
+    <title>Save a book</title>
+</head>
+
+<body>
+
+    <div class="container">
+        <h3>Add a book</h3>
+        <hr>
+        <form action="#" th:action="@{/books/save}"
+                         th:object="${book}" method="POST">
+
+            <input type="hidden" th:field="*{id}" />
+            <input type="text" th:field="*{name}"
+                    class="form-control mb-4 col-4" placeholder="Name">
+            <input type="text" th:field="*{release_year}"
+                   class="form-control mb-4 col-4" placeholder="Release year">
+            <input type="text" th:field="*{page_count}"
+                   class="form-control mb-4 col-4" placeholder="Page count">
+            <b>Type the rating 0-100</b>
+            <input type="text" th:field="*{rating}"
+                   class="form-control mb-4 col-4" placeholder="Rating">
+            <input type="text" th:field="*{description}"
+                   class="form-control mb-4 col-4" placeholder="Description">
+            <input type="text" th:field="*{author.name}"
+                   class="form-control mb-4 col-4" placeholder="Author">
+
+            <hr>
+            <b>Type the characters</b>
+            <br><br>
+            <i>Book should have at least one main or secondary character</i>
+            <br>
+            <i>Series will be named after first found main or secondary character</i>
+            <br><br>
+            <table>
+                <thead>
+                <tr>
+                    <th> Name</th>
+                    <th> Role</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="character, itemStat : *{characters}">
+                    <td><input th:field="*{characters[__${itemStat.index}__].name}" /></td>
+                    <td>
+                        <select th:field="*{characters[__${itemStat.index}__].role}">
+                            <option th:value="'main'" th:text="main"></option>
+                            <option th:value="'secondary'" th:text="secondary"></option>
+                            <option th:value="'episodical'" th:text="episodical"></option>
+                        </select>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <hr>
+
+            <button type="submit" class="btn btn-info col-2">Save</button>
+        </form>
+
+        <hr>
+        <a th:href="@{/books/list}">Back to Books List</a>
+    </div>
+
+</body>
+
+</html>

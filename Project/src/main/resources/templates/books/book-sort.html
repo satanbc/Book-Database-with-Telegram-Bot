@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
+    <title>Book Sort</title>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h3>Book Sort</h3>
+    <hr>
+    <a th:href="@{/books/insertionSort}"
+       class="btn btn-success btn-sm mb-3">
+        Insertion sort
+    </a>
+
+    <a th:href="@{/books/quickSort}"
+       class="btn btn-success btn-sm mb-3">
+        Quick sort
+    </a>
+
+    <a th:href="@{/books/mergeSort}"
+       class="btn btn-success btn-sm mb-3">
+        Merge sort
+    </a>
+
+    <a th:href="@{/books/selectionSort}"
+       class="btn btn-success btn-sm mb-3">
+        Selection sort
+    </a>
+
+    <a th:href="@{/books/shuttleSort}"
+       class="btn btn-success btn-sm mb-3">
+        Shuttle sort
+    </a>
+
+    <a th:href="@{/books/shellSort}"
+       class="btn btn-success btn-sm mb-3">
+        Shell sort
+    </a>
+
+</div>
+
+</body>
+</html>
+
+
+

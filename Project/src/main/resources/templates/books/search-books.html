@@ -1,0 +1,55 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
+    <title>Search result</title>
+</head>
+<body>
+<div class="container mt-5">
+    <h3 align="center">Search result</h3>
+    <table class="table table-bordered table-striped">
+        <thead class="thead-dark">
+        <tr>
+            <th>Name</th>
+            <th>Author</th>
+            <th>Release year</th>
+            <th>Page count</th>
+            <th>Rating</th>
+            <th>Description</th>
+            <th>Series</th>
+            <th>Characters</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="tempBook : *{books}">
+
+            <td th:text="${tempBook.name}"></td>
+            <td th:text="${tempBook.author.name}"></td>
+            <td th:text="${tempBook.release_year}"></td>
+            <td th:text="${tempBook.page_count}"></td>
+            <td>
+                <a th:text="${tempBook.rating}"></a>
+                &#9733;
+            </td>
+            <td th:text="${tempBook.description}"></td>
+            <td th:text="${tempBook.series.name}"></td>
+            <td>
+                <div th:each="tempCharacter : ${tempBook.characters}">
+                    <p th:text="${tempCharacter.name}"></p>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <a th:href="@{/books/list}">Back to Books List</a>
+</div>
+</body>
+</html>
