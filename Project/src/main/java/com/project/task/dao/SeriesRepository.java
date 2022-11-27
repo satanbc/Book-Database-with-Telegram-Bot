@@ -1,6 +1,6 @@
-package com.lab1.labs.dao;
+package com.project.task.dao;
 
-import com.lab1.labs.Entities.Series;
+import com.project.task.Entities.Series;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SeriesRepository extends JpaRepository<Series, Integer> {

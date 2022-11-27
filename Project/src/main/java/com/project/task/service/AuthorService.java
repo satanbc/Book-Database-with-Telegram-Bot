@@ -1,6 +1,6 @@
-package com.lab1.labs.service;
+package com.project.task.service;
 
-import com.lab1.labs.Entities.Author;
+import com.project.task.Entities.Author;
 
 import java.util.List;
 

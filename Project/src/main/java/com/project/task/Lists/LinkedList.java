@@ -1,4 +1,4 @@
-package com.lab1.labs.Lists;
+package com.project.task.Lists;
 
 class LinkedList {
     LinkedList next;

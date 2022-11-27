@@ -1,10 +1,10 @@
-package com.lab1.labs.service;
+package com.project.task.service;
 
 import java.util.List;
 import java.util.Optional;
 
-import com.lab1.labs.Entities.Book;
-import com.lab1.labs.dao.BookRepository;
+import com.project.task.Entities.Book;
+import com.project.task.dao.BookRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

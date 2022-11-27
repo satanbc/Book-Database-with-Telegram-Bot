@@ -1,12 +1,12 @@
-package com.lab1.labs.Entities;
+package com.project.task.Entities;
 
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "series")
-public class Series {
+@Table(name = "author")
+public class Author {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -16,18 +16,16 @@ public class Series {
     @Column(name = "name")
     private String name;
 
-    @ManyToOne(cascade = CascadeType.MERGE)
-    @JoinColumn(name = "author_id")
-    private Author author;
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "author", cascade = CascadeType.MERGE)
+    private List<Series> series;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "series", cascade = CascadeType.MERGE)
-    @OrderBy("release_year")
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "author", cascade = CascadeType.MERGE)
     private List<Book> books;
 
-    public Series() {
+    public Author() {
     }
 
-    public Series(String name) {
+    public Author(String name) {
         this.name = name;
     }
 
@@ -47,12 +45,12 @@ public class Series {
         this.name = name;
     }
 
-    public Author getAuthor() {
-        return author;
+    public List<Series> getSeries() {
+        return series;
     }
 
-    public void setAuthor(Author author) {
-        this.author = author;
+    public void setSeries(List<Series> series) {
+        this.series = series;
     }
 
     public List<Book> getBooks() {
@@ -63,19 +61,27 @@ public class Series {
         this.books = books;
     }
 
+    @Override
+    public String toString() {
+        return "Author{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                '}';
+    }
+
+    public void addSeries(Series theSeries){
+
+        if (series == null){
+            series = new ArrayList<>();
+        }
+        series.add(theSeries);
+    }
+
     public void addBook(Book theBook){
 
         if (books == null){
             books = new ArrayList<>();
         }
         books.add(theBook);
-    }
-
-    @Override
-    public String toString() {
-        return "Series{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                '}';
     }
 }

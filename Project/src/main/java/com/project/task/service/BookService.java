@@ -1,8 +1,8 @@
-package com.lab1.labs.service;
+package com.project.task.service;
 
 import java.util.List;
 
-import com.lab1.labs.Entities.Book;
+import com.project.task.Entities.Book;
 
 public interface BookService {
 

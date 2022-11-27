@@ -1,6 +1,6 @@
-package com.lab1.labs.dao;
+package com.project.task.dao;
 
-import com.lab1.labs.Entities.Book;
+import com.project.task.Entities.Book;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -1,7 +1,7 @@
-package com.lab1.labs.service;
+package com.project.task.service;
 
-import com.lab1.labs.Entities.Series;
-import com.lab1.labs.dao.SeriesRepository;
+import com.project.task.Entities.Series;
+import com.project.task.dao.SeriesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

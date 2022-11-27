@@ -1,6 +1,6 @@
-package com.lab1.labs.sorting;
+package com.project.task.sorting;
 
-import com.lab1.labs.Entities.Book;
+import com.project.task.Entities.Book;
 
 import java.util.Arrays;
 

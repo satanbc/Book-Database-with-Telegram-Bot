@@ -1,17 +1,17 @@
-package com.lab1.labs.controller;
+package com.project.task.controller;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.lab1.labs.Entities.Author;
-import com.lab1.labs.Entities.Book;
-import com.lab1.labs.Entities.Character;
-import com.lab1.labs.Entities.Series;
-import com.lab1.labs.service.AuthorService;
-import com.lab1.labs.service.BookService;
-import com.lab1.labs.service.CharacterService;
-import com.lab1.labs.service.SeriesService;
-import com.lab1.labs.sorting.Sorting;
+import com.project.task.Entities.Author;
+import com.project.task.Entities.Book;
+import com.project.task.Entities.Character;
+import com.project.task.Entities.Series;
+import com.project.task.service.AuthorService;
+import com.project.task.service.BookService;
+import com.project.task.service.CharacterService;
+import com.project.task.service.SeriesService;
+import com.project.task.sorting.Sorting;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
