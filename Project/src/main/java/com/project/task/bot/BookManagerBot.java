@@ -3,15 +3,16 @@ package com.project.task.bot;
 import com.project.task.Entities.Author;
 import com.project.task.Entities.Book;
 import com.project.task.Entities.Character;
+import com.project.task.bot.BotState;
 import com.project.task.controller.BookController;
 import com.project.task.service.AuthorService;
 import com.project.task.service.BookService;
 import com.project.task.service.CharacterService;
 import com.project.task.service.SeriesService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -25,11 +26,15 @@ import java.util.List;
 
 
 @Component
+@Configurable
 public class BookManagerBot extends TelegramLongPollingBot {
 
     private BookService bookService;
+
     private SeriesService seriesService;
+
     private AuthorService authorService;
+
     private CharacterService characterService;
 
     public BookManagerBot(BookService theBookService, SeriesService seriesService, AuthorService authorService, CharacterService characterService) {
@@ -41,9 +46,10 @@ public class BookManagerBot extends TelegramLongPollingBot {
 
     BotState state = BotState.STEP_0;
     int characters = 1;
-    List<String> charactersList = new ArrayList<>();
+    List<String> namesList = new ArrayList<>();
     List<String> rolesList = new ArrayList<>();
     Book book = new Book();
+    @Autowired
     BookController bookController = new BookController(bookService, seriesService, authorService, characterService);
 
     @Value("${bot.username}")
@@ -171,7 +177,7 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     break;
                 case STEP_5:
                     System.out.println(msg.getText());
-                    book.setPage_count(msg.getText());
+                    book.setDescription(msg.getText());
 
 
                     SendMessage message6 = new SendMessage();
@@ -187,23 +193,9 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     break;
                 case STEP_6:
                     System.out.println(msg.getText());
-                    if (characters == 0){
-                    try{
+                    if (characters == 1){
                         book.setRating(Integer.parseInt(msg.getText()));
-                    } catch (NumberFormatException exc){
-                        SendMessage errorMessage = new SendMessage();
-                        errorMessage.setChatId(msg.getChatId());
-                        errorMessage.setText("THIS IS NOT A NUMBER");
-
-                        try {
-                            execute(errorMessage);
-                        } catch (TelegramApiException e) {
-                            throw new RuntimeException(e);
-                        }
-
-                        state = BotState.STEP_6;
-                        break;
-                    }}else charactersList.add(msg.getText());
+                    }else namesList.add(msg.getText());
 
                     SendMessage message8 = new SendMessage();
                     message8.setChatId(msg.getChatId());
@@ -250,14 +242,14 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     break;
                 case STEP_8:
                     System.out.println(msg.getText());
-                    charactersList.add(msg.getText());
-                    List<Character> characterOList = new ArrayList<>();
+                    namesList.add(msg.getText());
+                    List<Character> characterList = new ArrayList<>();
 
                     for (int i = 0; i < 3; i++){
-                        Character c = new Character(charactersList.get(i), rolesList.get(i));
-                        characterOList.add(c);
+                        Character c = new Character(namesList.get(i), rolesList.get(i));
+                        characterList.add(c);
                     }
-                    book.setCharacters(characterOList);
+                    book.setCharacters(characterList);
                     bookController.saveBook(book);
 
                     SendMessage message9 = new SendMessage();
@@ -269,6 +261,12 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
+
+                    characters = 1;
+                    namesList = new ArrayList<>();
+                    rolesList = new ArrayList<>();
+                    book = new Book();
+
                     state = BotState.STEP_0;
                     break;
                 }

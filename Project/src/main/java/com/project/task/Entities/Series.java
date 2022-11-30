@@ -20,7 +20,7 @@ public class Series {
     @JoinColumn(name = "author_id")
     private Author author;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "series", cascade = CascadeType.MERGE)
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "series", cascade = CascadeType.MERGE)
     @OrderBy("release_year")
     private List<Book> books;
 

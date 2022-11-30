@@ -37,7 +37,7 @@ public class Book {
     @JoinColumn(name = "series_id")
     private Series series;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
             name = "book_has_character",
             joinColumns = @JoinColumn(name = "book_id"),

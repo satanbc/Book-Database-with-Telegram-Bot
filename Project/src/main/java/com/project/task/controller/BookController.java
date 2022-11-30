@@ -27,13 +27,13 @@ import javax.persistence.NoResultException;
 @RequestMapping("/books")
 public class BookController {
 
-	public BookService bookService;
-	public SeriesService seriesService;
-	public AuthorService authorService;
-	public CharacterService characterService;
+	private final BookService bookService;
+	private final SeriesService seriesService;
+	private final AuthorService authorService;
+	private final CharacterService characterService;
 	
-	public BookController(BookService theBookService, SeriesService seriesService, AuthorService authorService, CharacterService characterService) {
-		bookService = theBookService;
+	public BookController(BookService bookService, SeriesService seriesService, AuthorService authorService, CharacterService characterService) {
+		this.bookService = bookService;
 		this.seriesService = seriesService;
 		this.authorService = authorService;
 		this.characterService = characterService;
