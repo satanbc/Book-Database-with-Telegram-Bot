@@ -12,7 +12,10 @@ import com.project.task.service.SeriesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -27,6 +30,7 @@ import java.util.List;
 
 @Component
 @Configurable
+@Transactional
 public class BookManagerBot extends TelegramLongPollingBot {
 
     private BookService bookService;
@@ -49,6 +53,9 @@ public class BookManagerBot extends TelegramLongPollingBot {
     List<String> namesList = new ArrayList<>();
     List<String> rolesList = new ArrayList<>();
     Book book = new Book();
+
+    boolean deleteAction = false;
+    boolean findAction = false;
     @Autowired
     BookController bookController = new BookController(bookService, seriesService, authorService, characterService);
 
@@ -63,49 +70,202 @@ public class BookManagerBot extends TelegramLongPollingBot {
 
         if (update.hasMessage() && update.getMessage().hasText()) {
             Message msg = update.getMessage();
+            SendMessage sendMessage = new SendMessage();
 
             if (msg.getText().trim().equals("/help")){
-                SendMessage helpMessage = new SendMessage();
-                helpMessage.setChatId(msg.getChatId());
-                helpMessage.setText("✨<b>Існуючі команди</b>✨\n\n"
-                        + "/functions - виконати дії над базою книжок\n"
-                        + "/help - отримати список команд\n");
+                sendMessage.setChatId(msg.getChatId());
+                sendMessage.setText("✨Існуючі команди✨\n\n"
+                        + "/functions - виконати дії над базою книжок\n\n"
+                        + "/help - отримати список команд\n\n");
 
                 try {
-                    execute(helpMessage);
+                    execute(sendMessage);
                 } catch (TelegramApiException e) {
                     throw new RuntimeException(e);
                 }
             }
+            if (msg.getText().trim().equals("/start")){
+                sendMessage.setChatId(msg.getChatId());
+                sendMessage.setText("Привіт! Я BookManagerBot. Я зможу допомогти тобі виконувати операції з базою книжок!\n\n" +
+                        "Щоб отримати список доступних команд, введи /help");
 
-            else if (msg.getText().trim().equals("/functions")) {
-                SendMessage message = new SendMessage();
-                message.setChatId(msg.getChatId());
-                message.setText("Here is your keyboard");
+                try {
+                    execute(sendMessage);
+                } catch (TelegramApiException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (msg.getText().trim().equals("Отримати список книжок")){
+                sendMessage.setChatId(msg.getChatId());
+                List<Book> l = bookService.findAll();
+                sendMessage.setText(l.toString());
+
+                try {
+                    execute(sendMessage);
+                } catch (TelegramApiException e) {
+                    throw new RuntimeException(e);
+                }
 
                 ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
                 List<KeyboardRow> rowsReply = new ArrayList<>();
                 KeyboardRow rowReply = new KeyboardRow();
-                rowReply.add("Add a new book");
-
+                rowReply.add("Додати книгу");
+                rowReply.add("Отримати список книжок");
+                rowReply.add("Видалити книгу за номером");
+                rowReply.add("Знайти книгу за назвою");
                 rowsReply.add(rowReply);
                 replyKeyboardMarkup.setKeyboard(rowsReply);
-                message.setReplyMarkup(replyKeyboardMarkup);
 
+                sendMessage.setChatId(msg.getChatId());
+                sendMessage.setText("Доступні функції: ");
+                sendMessage.setReplyMarkup(replyKeyboardMarkup);
                 try {
-                    execute(message);
+                    execute(sendMessage);
                 } catch (TelegramApiException e) {
                     throw new RuntimeException(e);
                 }
             }
 
-            if (msg.getText().trim().equals("Add a new book")) {
-                SendMessage message1 = new SendMessage();
-                message1.setChatId(msg.getChatId());
-                message1.setText("Please, enter the name");
+            try {
+                int i = Integer.parseInt(msg.getText().trim());
+            } catch (NumberFormatException nfe) {
+                deleteAction = false;
+            }
+
+            if (deleteAction){
+                sendMessage.setChatId(msg.getChatId());
+                int id = Integer.parseInt(msg.getText());
+                boolean check = false;
+
+                for (Book bookn : bookService.findAll()){
+                    if (bookn.getId() == id)
+                        check = true;
+                }
+
+                if (check){
+                    sendMessage.setText("Видалено книгу №" + id);
+                    deleteAction = false;
+                    bookController.delete(id);
+                }else
+                    sendMessage.setText("INVALID NUMBER");
+                    deleteAction = true;
 
                 try {
-                    execute(message1);
+                    execute(sendMessage);
+                } catch (TelegramApiException e) {
+                    throw new RuntimeException(e);
+                }
+
+                ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+                List<KeyboardRow> rowsReply = new ArrayList<>();
+                KeyboardRow rowReply = new KeyboardRow();
+                rowReply.add("Додати книгу");
+                rowReply.add("Отримати список книжок");
+                rowReply.add("Видалити книгу за номером");
+                rowReply.add("Знайти книгу за назвою");
+                rowsReply.add(rowReply);
+                replyKeyboardMarkup.setKeyboard(rowsReply);
+
+                sendMessage.setChatId(msg.getChatId());
+                sendMessage.setText("Доступні функції: ");
+                sendMessage.setReplyMarkup(replyKeyboardMarkup);
+                try {
+                    execute(sendMessage);
+                } catch (TelegramApiException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            if (findAction){
+                sendMessage.setChatId(msg.getChatId());
+                String keyword = msg.getText();
+
+                sendMessage.setText("Знайдено: \n\n" +
+                        bookService.getByKeyword(keyword).toString());
+                findAction = false;
+                if (bookService.getByKeyword(keyword).isEmpty())
+                    sendMessage.setText("Нічого не знайдено");
+
+                try {
+                    execute(sendMessage);
+                } catch (TelegramApiException e) {
+                    throw new RuntimeException(e);
+                }
+
+                ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+                List<KeyboardRow> rowsReply = new ArrayList<>();
+                KeyboardRow rowReply = new KeyboardRow();
+                rowReply.add("Додати книгу");
+                rowReply.add("Отримати список книжок");
+                rowReply.add("Видалити книгу за номером");
+                rowReply.add("Знайти книгу за назвою");
+                rowsReply.add(rowReply);
+                replyKeyboardMarkup.setKeyboard(rowsReply);
+
+                sendMessage.setChatId(msg.getChatId());
+                sendMessage.setText("Доступні функції: ");
+                sendMessage.setReplyMarkup(replyKeyboardMarkup);
+                try {
+                    execute(sendMessage);
+                } catch (TelegramApiException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            if (msg.getText().trim().equals("Видалити книгу за номером")){
+                sendMessage.setChatId(msg.getChatId());
+                sendMessage.setText("Введіть id для видалення");
+
+                deleteAction = true;
+
+                try {
+                    execute(sendMessage);
+                } catch (TelegramApiException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            if (msg.getText().trim().equals("Знайти книгу за назвою")){
+                sendMessage.setChatId(msg.getChatId());
+                sendMessage.setText("Введіть назву для пошуку");
+
+                findAction = true;
+
+                try {
+                    execute(sendMessage);
+                } catch (TelegramApiException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            if (msg.getText().trim().equals("/functions")) {
+                sendMessage.setChatId(msg.getChatId());
+                sendMessage.setText("Доступні функції: ");
+
+                ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+                List<KeyboardRow> rowsReply = new ArrayList<>();
+                KeyboardRow rowReply = new KeyboardRow();
+                rowReply.add("Додати книгу");
+                rowReply.add("Отримати список книжок");
+                rowReply.add("Видалити книгу за номером");
+                rowReply.add("Знайти книгу за назвою");
+                rowsReply.add(rowReply);
+                replyKeyboardMarkup.setKeyboard(rowsReply);
+                sendMessage.setReplyMarkup(replyKeyboardMarkup);
+
+                try {
+                    execute(sendMessage);
+                } catch (TelegramApiException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            if (msg.getText().trim().equals("Додати книгу")) {
+                sendMessage.setChatId(msg.getChatId());
+                sendMessage.setText("Введіть назву");
+
+                try {
+                    execute(sendMessage);
                 } catch (TelegramApiException e) {
                     throw new RuntimeException(e);
                 }
@@ -118,12 +278,11 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     System.out.println(msg.getText());
                     book.setName(msg.getText());
 
-                    SendMessage message2 = new SendMessage();
-                    message2.setChatId(msg.getChatId());
-                    message2.setText("Please, enter the author");
+                    sendMessage.setChatId(msg.getChatId());
+                    sendMessage.setText("Введіть автора");
 
                     try {
-                        execute(message2);
+                        execute(sendMessage);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -134,12 +293,11 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     Author author = new Author(msg.getText());
                     book.setAuthor(author);
 
-                    SendMessage message3 = new SendMessage();
-                    message3.setChatId(msg.getChatId());
-                    message3.setText("Please, enter the release year");
+                    sendMessage.setChatId(msg.getChatId());
+                    sendMessage.setText("Введіть рік виходу");
 
                     try {
-                        execute(message3);
+                        execute(sendMessage);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -149,12 +307,11 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     System.out.println(msg.getText());
                     book.setRelease_year(msg.getText());
 
-                    SendMessage message4 = new SendMessage();
-                    message4.setChatId(msg.getChatId());
-                    message4.setText("Please, enter the page count");
+                    sendMessage.setChatId(msg.getChatId());
+                    sendMessage.setText("Введіть кількість сторінок");
 
                     try {
-                        execute(message4);
+                        execute(sendMessage);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -164,12 +321,11 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     System.out.println(msg.getText());
                     book.setPage_count(msg.getText());
 
-                    SendMessage message5 = new SendMessage();
-                    message5.setChatId(msg.getChatId());
-                    message5.setText("Please, enter the description");
+                    sendMessage.setChatId(msg.getChatId());
+                    sendMessage.setText("Введіть опис");
 
                     try {
-                        execute(message5);
+                        execute(sendMessage);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -179,13 +335,11 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     System.out.println(msg.getText());
                     book.setDescription(msg.getText());
 
-
-                    SendMessage message6 = new SendMessage();
-                    message6.setChatId(msg.getChatId());
-                    message6.setText("Please, enter the rating");
+                    sendMessage.setChatId(msg.getChatId());
+                    sendMessage.setText("Введіть рейтинг: від 0 до 100");
 
                     try {
-                        execute(message6);
+                        execute(sendMessage);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -197,9 +351,8 @@ public class BookManagerBot extends TelegramLongPollingBot {
                         book.setRating(Integer.parseInt(msg.getText()));
                     }else namesList.add(msg.getText());
 
-                    SendMessage message8 = new SendMessage();
-                    message8.setChatId(msg.getChatId());
-                    message8.setText("Please, enter the " + characters + " character's role");
+                    sendMessage.setChatId(msg.getChatId());
+                    sendMessage.setText("Введіть роль " + characters + " героя");
 
                     ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
                     List<KeyboardRow> rowsReply = new ArrayList<>();
@@ -211,10 +364,10 @@ public class BookManagerBot extends TelegramLongPollingBot {
 
                     rowsReply.add(rowReply);
                     replyKeyboardMarkup.setKeyboard(rowsReply);
-                    message8.setReplyMarkup(replyKeyboardMarkup);
+                    sendMessage.setReplyMarkup(replyKeyboardMarkup);
 
                     try {
-                        execute(message8);
+                        execute(sendMessage);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -224,12 +377,11 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     System.out.println(msg.getText());
                     rolesList.add(msg.getText());
 
-                    SendMessage message7 = new SendMessage();
-                    message7.setChatId(msg.getChatId());
-                    message7.setText("What's its name?");
+                    sendMessage.setChatId(msg.getChatId());
+                    sendMessage.setText("Як його звати?");
 
                     try {
-                        execute(message7);
+                        execute(sendMessage);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -252,12 +404,11 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     book.setCharacters(characterList);
                     bookController.saveBook(book);
 
-                    SendMessage message9 = new SendMessage();
-                    message9.setChatId(msg.getChatId());
-                    message9.setText("Book was added, thanks!");
+                    sendMessage.setChatId(msg.getChatId());
+                    sendMessage.setText("Книга була додана, дякую!");
 
                     try {
-                        execute(message9);
+                        execute(sendMessage);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -268,6 +419,26 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     book = new Book();
 
                     state = BotState.STEP_0;
+
+                    sendMessage.setChatId(msg.getChatId());
+                    sendMessage.setText("Доступні функції: ");
+                    ReplyKeyboardMarkup replyKeyboardMarkup2 = new ReplyKeyboardMarkup();
+                    List<KeyboardRow> rowsReply2 = new ArrayList<>();
+                    KeyboardRow rowReply2 = new KeyboardRow();
+
+                    rowReply2.add("Додати книгу");
+                    rowReply2.add("Отримати список книжок");
+                    rowReply2.add("Видалити книгу за номером");
+                    rowReply2.add("Знайти книгу за назвою");
+
+                    rowsReply2.add(rowReply2);
+                    replyKeyboardMarkup2.setKeyboard(rowsReply2);
+                    sendMessage.setReplyMarkup(replyKeyboardMarkup2);
+                    try {
+                        execute(sendMessage);
+                    } catch (TelegramApiException e) {
+                        throw new RuntimeException(e);
+                    }
                     break;
                 }
             }

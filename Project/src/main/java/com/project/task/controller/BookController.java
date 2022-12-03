@@ -18,6 +18,8 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.query.Query;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +27,7 @@ import javax.persistence.NoResultException;
 
 @Controller
 @RequestMapping("/books")
+@Transactional
 public class BookController {
 
 	private final BookService bookService;
