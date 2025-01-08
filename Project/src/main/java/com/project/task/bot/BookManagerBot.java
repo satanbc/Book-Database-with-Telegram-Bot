@@ -3,7 +3,6 @@ package com.project.task.bot;
 import com.project.task.Entities.Author;
 import com.project.task.Entities.Book;
 import com.project.task.Entities.Character;
-import com.project.task.bot.BotState;
 import com.project.task.controller.BookController;
 import com.project.task.service.AuthorService;
 import com.project.task.service.BookService;
@@ -12,9 +11,7 @@ import com.project.task.service.SeriesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -26,7 +23,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 
 @Component
@@ -246,78 +242,87 @@ public class BookManagerBot extends TelegramLongPollingBot {
                 return;
             }
 
-            switch (state){
+            switch (state) {
                 case STEP_1:
-                    System.out.println(msg.getText());
+                    if (msg.getText().isEmpty()) {
+                        sendMessage.setChatId(msg.getChatId());
+                        sendMessage.setText("Назва книги не може бути порожньою. Введіть назву книги:");
+                        try {
+                            execute(sendMessage);
+                        } catch (TelegramApiException e) {
+                            throw new RuntimeException(e);
+                        }
+                        return;
+                    }
                     book.setName(msg.getText());
-
                     sendMessage.setChatId(msg.getChatId());
-                    sendMessage.setText("Введіть автора");
-
-                    try {
-                        execute(sendMessage);
-                    } catch (TelegramApiException e) {
-                        throw new RuntimeException(e);
-                    }
+                    sendMessage.setText("Введіть автора:");
                     state = BotState.STEP_2;
+                    executeMessage(sendMessage);
                     break;
+
                 case STEP_2:
-                    System.out.println(msg.getText());
-                    Author author = new Author(msg.getText());
-                    book.setAuthor(author);
-
-                    sendMessage.setChatId(msg.getChatId());
-                    sendMessage.setText("Введіть рік виходу");
-
-                    try {
-                        execute(sendMessage);
-                    } catch (TelegramApiException e) {
-                        throw new RuntimeException(e);
+                    if (msg.getText().isEmpty()) {
+                        sendMessage.setChatId(msg.getChatId());
+                        sendMessage.setText("Ім’я автора не може бути порожнім. Введіть автора:");
+                        executeMessage(sendMessage);
+                        return;
                     }
+                    book.setAuthor(new Author(msg.getText()));
+                    sendMessage.setChatId(msg.getChatId());
+                    sendMessage.setText("Введіть рік виходу:");
                     state = BotState.STEP_3;
+                    executeMessage(sendMessage);
                     break;
+
                 case STEP_3:
-                    System.out.println(msg.getText());
-                    book.setRelease_year(msg.getText());
-
-                    sendMessage.setChatId(msg.getChatId());
-                    sendMessage.setText("Введіть кількість сторінок");
-
                     try {
-                        execute(sendMessage);
-                    } catch (TelegramApiException e) {
-                        throw new RuntimeException(e);
+                        int year = Integer.parseInt(msg.getText());
+                        if (year < 1000 || year > 2025) {
+                            throw new NumberFormatException();
+                        }
+                        book.setRelease_year(msg.getText());
+                        sendMessage.setChatId(msg.getChatId());
+                        sendMessage.setText("Введіть кількість сторінок:");
+                        state = BotState.STEP_4;
+                    } catch (NumberFormatException e) {
+                        sendMessage.setChatId(msg.getChatId());
+                        sendMessage.setText("Невірний рік. Будь ласка, введіть дійсний рік (наприклад, 2023):");
                     }
-                    state = BotState.STEP_4;
+                    executeMessage(sendMessage);
                     break;
+
                 case STEP_4:
-                    System.out.println(msg.getText());
-                    book.setPage_count(msg.getText());
-
-                    sendMessage.setChatId(msg.getChatId());
-                    sendMessage.setText("Введіть опис");
-
                     try {
-                        execute(sendMessage);
-                    } catch (TelegramApiException e) {
-                        throw new RuntimeException(e);
+                        int pages = Integer.parseInt(msg.getText());
+                        if (pages <= 0) {
+                            throw new NumberFormatException();
+                        }
+                        book.setPage_count(msg.getText());
+                        sendMessage.setChatId(msg.getChatId());
+                        sendMessage.setText("Введіть опис книги:");
+                        state = BotState.STEP_5;
+                    } catch (NumberFormatException e) {
+                        sendMessage.setChatId(msg.getChatId());
+                        sendMessage.setText("Кількість сторінок має бути позитивним цілим числом. Спробуйте ще раз:");
                     }
-                    state = BotState.STEP_5;
+                    executeMessage(sendMessage);
                     break;
+
                 case STEP_5:
-                    System.out.println(msg.getText());
-                    book.setDescription(msg.getText());
-
-                    sendMessage.setChatId(msg.getChatId());
-                    sendMessage.setText("Введіть рейтинг: від 0 до 10");
-
-                    try {
-                        execute(sendMessage);
-                    } catch (TelegramApiException e) {
-                        throw new RuntimeException(e);
+                    if (msg.getText().isEmpty()) {
+                        sendMessage.setChatId(msg.getChatId());
+                        sendMessage.setText("Опис не може бути порожнім. Введіть опис книги:");
+                        executeMessage(sendMessage);
+                        return;
                     }
+                    book.setDescription(msg.getText());
+                    sendMessage.setChatId(msg.getChatId());
+                    sendMessage.setText("Введіть рейтинг книги (від 0 до 10):");
                     state = BotState.STEP_6;
+                    executeMessage(sendMessage);
                     break;
+
                 case STEP_6:
                     System.out.println(msg.getText());
                     if (characters == 1){
@@ -346,9 +351,42 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     }
                     state = BotState.STEP_7;
                     break;
+
                 case STEP_7:
                     System.out.println(msg.getText());
-                    rolesList.add(msg.getText());
+
+                    List<String> validRoles = List.of("main", "secondary", "episodic");
+
+                    if (!validRoles.contains(msg.getText().toLowerCase())) {
+                        sendMessage.setChatId(msg.getChatId());
+                        sendMessage.setText("Будь ласка, виберіть одну з правильних ролей: 'main', 'secondary' або 'episodic'.");
+
+                        ReplyKeyboardMarkup replyKeyboardMarkupC = new ReplyKeyboardMarkup();
+                        List<KeyboardRow> rowsReplyC = new ArrayList<>();
+                        KeyboardRow rowReplyC = new KeyboardRow();
+
+                        rowReplyC.add("main");
+                        rowReplyC.add("secondary");
+                        rowReplyC.add("episodic");
+
+                        rowsReplyC.add(rowReplyC);
+                        replyKeyboardMarkupC.setKeyboard(rowsReplyC);
+                        sendMessage.setReplyMarkup(replyKeyboardMarkupC);
+
+                        try {
+                            execute(sendMessage);
+                        } catch (TelegramApiException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        return;
+                    }
+
+                    if (characters == 1) {
+                        rolesList.add("main");
+                    } else {
+                        rolesList.add(msg.getText());
+                    }
 
                     sendMessage.setChatId(msg.getChatId());
                     sendMessage.setText("Як його звати?");
@@ -358,52 +396,60 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
+
                     characters++;
 
-                    if (characters < 4){
+                    if (characters < 4) {
                         state = BotState.STEP_6;
-                    }else
+                    } else {
                         state = BotState.STEP_8;
+                    }
                     break;
+
+
                 case STEP_8:
-                    System.out.println(msg.getText());
+                    if (msg.getText().isEmpty()) {
+                        sendMessage.setChatId(msg.getChatId());
+                        sendMessage.setText("Ім’я героя не може бути порожнім. Введіть ім’я:");
+                        executeMessage(sendMessage);
+                        return;
+                    }
                     namesList.add(msg.getText());
-                    List<Character> characterList = new ArrayList<>();
+                    if (characters < 3) {
+                        characters++;
+                        state = BotState.STEP_6;
+                    } else {
+                        List<Character> characterList = new ArrayList<>();
+                        for (int i = 0; i < namesList.size(); i++) {
+                            characterList.add(new Character(namesList.get(i), rolesList.get(i)));
+                        }
+                        book.setCharacters(characterList);
+                        bookController.saveBook(book);
 
-                    for (int i = 0; i < 3; i++){
-                        Character c = new Character(namesList.get(i), rolesList.get(i));
-                        characterList.add(c);
+                        sendMessage.setChatId(msg.getChatId());
+                        sendMessage.setText("Книга успішно додана! 🎉");
+                        executeMessage(sendMessage);
+                        characters = 1;
+                        namesList.clear();
+                        rolesList.clear();
+                        book = new Book();
+                        state = BotState.STEP_0;
                     }
-                    book.setCharacters(characterList);
-                    bookController.saveBook(book);
-
-                    sendMessage.setChatId(msg.getChatId());
-                    sendMessage.setText("Книга була додана, дякую!");
-
-                    try {
-                        execute(sendMessage);
-                    } catch (TelegramApiException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    characters = 1;
-                    namesList = new ArrayList<>();
-                    rolesList = new ArrayList<>();
-                    book = new Book();
-
-                    state = BotState.STEP_0;
-
-                    sendMessage.setChatId(msg.getChatId());
                     menu(sendMessage);
-                    try {
-                        execute(sendMessage);
-                    } catch (TelegramApiException e) {
-                        throw new RuntimeException(e);
-                    }
+                    executeMessage(sendMessage);
                     break;
-                }
             }
         }
+        }
+
+    private void executeMessage(SendMessage message) {
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     private static void menu(SendMessage sendMessage) {
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();

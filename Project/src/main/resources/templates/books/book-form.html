@@ -3,11 +3,9 @@
       xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
 
     <title>Save a book</title>
@@ -22,9 +20,8 @@
 
         <input type="hidden" th:field="*{id}" />
 
-        <!-- Book Fields -->
         <input type="text" th:field="*{name}" class="form-control mb-4 col-4" placeholder="Name" required />
-        <input type="number" th:field="*{release_year}" class="form-control mb-4 col-4" placeholder="Release year" min="0" max="2025" required />
+        <input type="number" th:field="*{release_year}" class="form-control mb-4 col-4" placeholder="Release year" min="1000" max="2025" required />
         <input type="number" th:field="*{page_count}" class="form-control mb-4 col-4" placeholder="Page count" required />
         <b>Type the rating 0-10</b>
         <input type="number" th:field="*{rating}" class="form-control mb-4 col-4" placeholder="Rating" min="0" max="10" required />

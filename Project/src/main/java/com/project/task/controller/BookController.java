@@ -13,10 +13,12 @@ import com.project.task.service.BookService;
 import com.project.task.service.CharacterService;
 import com.project.task.service.SeriesService;
 import com.project.task.sorting.Sorting;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -116,7 +118,7 @@ public class BookController {
 			query1.setParameter("name", authorName);
 			index = query1.getSingleResult();
 		} catch (NoResultException e) {
-			// No result, author not found
+
 		}
 
 		try {
@@ -129,7 +131,7 @@ public class BookController {
 
 			characterIdList1.addAll(characterIdList2);
 		} catch (NoResultException e) {
-			// No result, characters not found
+
 		}
 
 		for (int m : characterIdList1) {
@@ -190,18 +192,6 @@ public class BookController {
 	@GetMapping("/delete")
 	public  String delete(@RequestParam("bookId") int theId){
 
-		deletion(theId);
-
-		return "redirect:/books/list";
-	}
-
-	@Transactional
-	public void deleteWithBot(@RequestParam("bookId") int theId){
-
-		deletion(theId);
-	}
-
-	private void deletion(int theId) {
 		Book theBook = bookService.findById(theId);
 		Series theSeries = seriesService.findById(theBook.getSeries().getId());
 		Author theAuthor = authorService.findById(theBook.getAuthor().getId());
@@ -225,7 +215,59 @@ public class BookController {
 		}catch (EmptyResultDataAccessException e){
 
 		}
+
+		return "redirect:/books/list";
 	}
+
+	@Autowired
+	private SessionFactory sessionFactory;
+
+	public void deleteWithBot(int theId) {
+		Session session = sessionFactory.openSession();
+		session.beginTransaction();
+
+		try {
+			Book theBook = session.get(Book.class, theId);
+
+			Series theSeries = theBook.getSeries();
+			Hibernate.initialize(theSeries.getBooks());
+
+			Author theAuthor = theBook.getAuthor();
+
+			List<Character> characterList = theBook.getCharacters();
+
+			session.delete(theBook);
+
+			if (theSeries.getBooks().isEmpty()) {
+				session.delete(theSeries);
+			}
+
+			if (theAuthor.getBooks().isEmpty()) {
+				session.delete(theAuthor);
+			}
+
+			for (Character character : characterList) {
+				try {
+					session.delete(character);
+				} catch (EmptyResultDataAccessException e) {
+
+				}
+			}
+
+			// Commit the transaction
+			session.getTransaction().commit();
+		} catch (Exception e) {
+			// If an error occurs, roll back the transaction
+			if (session.getTransaction() != null) {
+				session.getTransaction().rollback();
+			}
+			throw e;  // Rethrow the exception after rolling back the transaction
+		} finally {
+			// Make sure to close the session regardless of success or failure
+			session.close();
+		}
+	}
+
 
 	@GetMapping("/insertionSort")
 	public String insertionSort(Model theModel){
