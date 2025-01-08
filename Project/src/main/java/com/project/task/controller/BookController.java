@@ -2,6 +2,7 @@ package com.project.task.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.project.task.Entities.Author;
 import com.project.task.Entities.Book;
@@ -18,7 +19,6 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.query.Query;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +27,6 @@ import javax.persistence.NoResultException;
 
 @Controller
 @RequestMapping("/books")
-@Transactional
 public class BookController {
 
 	private final BookService bookService;
@@ -87,8 +86,9 @@ public class BookController {
 		return "books/search-books";
 	}
 
+	@Transactional
 	@PostMapping("/save")
-	public String saveBook(@ModelAttribute("book") Book theBook){
+	public String saveBook(@ModelAttribute("book") Book theBook) {
 
 		int index = -1;
 		boolean isMainCharacterNew = true;
@@ -101,7 +101,6 @@ public class BookController {
 		List<Integer> characterIdList1 = new ArrayList<>();
 		List<Character> characterList = new ArrayList<>();
 
-
 		SessionFactory factory = new Configuration()
 				.configure()
 				.addAnnotatedClass(Author.class)
@@ -112,39 +111,43 @@ public class BookController {
 		Session session = factory.getCurrentSession();
 		session.beginTransaction();
 
-
-		try{
+		try {
 			Query<Integer> query1 = session.createQuery("select author.id from Author author where author.name=:name");
-			query1 = query1.setParameter("name", authorName);
+			query1.setParameter("name", authorName);
 			index = query1.getSingleResult();
-		}catch (NoResultException e){}
-		try{
+		} catch (NoResultException e) {
+			// No result, author not found
+		}
+
+		try {
 			Query<Integer> query2 = session.createQuery("select character.id from Character character where character.role=:role");
-			query2 = query2.setParameter("role", "main");
+			query2.setParameter("role", "main");
 			characterIdList1 = query2.getResultList();
 
-			query2 = query2.setParameter("role", "secondary");
+			query2.setParameter("role", "secondary");
 			List<Integer> characterIdList2 = query2.getResultList();
 
 			characterIdList1.addAll(characterIdList2);
-		}catch (NoResultException e){}
-
-		for (int m : characterIdList1){
-			characterList.add(characterService.findById(m));
+		} catch (NoResultException e) {
+			// No result, characters not found
 		}
 
+		for (int m : characterIdList1) {
+			Character character = characterService.findById(m);
+			if (character != null && character.getName() != null && !character.getName().isEmpty() && character.getRole() != null && !character.getRole().isEmpty()) {
+				characterList.add(character);
+			}
+		}
 
-		if (index == -1){
+		if (index == -1) {
 			tempAuthor = new Author(authorName);
-		}
-		else {
+		} else {
 			tempAuthor = authorService.findById(index);
 		}
 
-
-		for (Character cha : characterList){
-			for (int t = 0; t < theBook.getCharacters().size(); t++){
-				if(cha.getName().equals(theBook.getCharacters().get(t).getName())){
+		for (Character cha : characterList) {
+			for (int t = 0; t < theBook.getCharacters().size(); t++) {
+				if (cha.getName().equals(theBook.getCharacters().get(t).getName())) {
 					tempSeriesObject = cha.getBooks().get(0).getSeries();
 					isMainCharacterNew = false;
 					break;
@@ -152,23 +155,28 @@ public class BookController {
 			}
 		}
 
-
 		if (isMainCharacterNew) {
 			for (int t = 0; t < theBook.getCharacters().size(); t++) {
 				if (theBook.getCharacters().get(t).getRole().equals("main") || theBook.getCharacters().get(t).getRole().equals("secondary")) {
 					String name = theBook.getCharacters().get(t).getName();
-					series = new Series(name + " adventures");
-					tempAuthor.addSeries(series);
-					authorService.save(tempAuthor);
-					series.setAuthor(tempAuthor);
-					series.addBook(theBook);
-					seriesService.save(series);
-					break;
+					if (name != null && !name.trim().isEmpty()) {
+						series = new Series(name + " adventures");
+						tempAuthor.addSeries(series);
+						authorService.save(tempAuthor);
+						series.setAuthor(tempAuthor);
+						series.addBook(theBook);
+						seriesService.save(series);
+						break;
+					}
 				}
 			}
-		}else 
+		} else {
 			series = tempSeriesObject;
+		}
 
+		theBook.setCharacters(theBook.getCharacters().stream()
+				.filter(character -> character.getName() != null && !character.getName().trim().isEmpty())
+				.collect(Collectors.toList()));
 
 		tempAuthor.addBook(theBook);
 		theBook.setAuthor(tempAuthor);
@@ -178,6 +186,8 @@ public class BookController {
 
 		return "redirect:/books/list";
 	}
+
+
 
 	@GetMapping("/delete")
 	public  String delete(@RequestParam("bookId") int theId){

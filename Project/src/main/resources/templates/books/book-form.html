@@ -15,63 +15,68 @@
 
 <body>
 
-    <div class="container">
-        <h3>Add a book</h3>
-        <hr>
-        <form action="#" th:action="@{/books/save}"
-                         th:object="${book}" method="POST">
+<div class="container">
+    <h3>Add a book</h3>
+    <hr>
+    <form action="#" th:action="@{/books/save}" th:object="${book}" method="POST">
 
-            <input type="hidden" th:field="*{id}" />
-            <input type="text" th:field="*{name}"
-                    class="form-control mb-4 col-4" placeholder="Name">
-            <input type="text" th:field="*{release_year}"
-                   class="form-control mb-4 col-4" placeholder="Release year">
-            <input type="text" th:field="*{page_count}"
-                   class="form-control mb-4 col-4" placeholder="Page count">
-            <b>Type the rating 0-100</b>
-            <input type="text" th:field="*{rating}"
-                   class="form-control mb-4 col-4" placeholder="Rating">
-            <input type="text" th:field="*{description}"
-                   class="form-control mb-4 col-4" placeholder="Description">
-            <input type="text" th:field="*{author.name}"
-                   class="form-control mb-4 col-4" placeholder="Author">
+        <input type="hidden" th:field="*{id}" />
 
-            <hr>
-            <b>Type the characters</b>
-            <br><br>
-            <i>Book should have at least one main or secondary character</i>
-            <br>
-            <i>Series will be named after first found main or secondary character</i>
-            <br><br>
-            <table>
-                <thead>
-                <tr>
-                    <th> Name</th>
-                    <th> Role</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="character, itemStat : *{characters}">
-                    <td><input th:field="*{characters[__${itemStat.index}__].name}" /></td>
-                    <td>
-                        <select th:field="*{characters[__${itemStat.index}__].role}">
-                            <option th:value="'main'" th:text="main"></option>
-                            <option th:value="'secondary'" th:text="secondary"></option>
-                            <option th:value="'episodical'" th:text="episodical"></option>
-                        </select>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-
-            <hr>
-
-            <button type="submit" class="btn btn-info col-2">Save</button>
-        </form>
+        <!-- Book Fields -->
+        <input type="text" th:field="*{name}" class="form-control mb-4 col-4" placeholder="Name" required />
+        <input type="number" th:field="*{release_year}" class="form-control mb-4 col-4" placeholder="Release year" required />
+        <input type="number" th:field="*{page_count}" class="form-control mb-4 col-4" placeholder="Page count" required />
+        <b>Type the rating 0-10</b>
+        <input type="number" th:field="*{rating}" class="form-control mb-4 col-4" placeholder="Rating" min="0" max="10" required />
+        <input type="text" th:field="*{description}" class="form-control mb-4 col-4" placeholder="Description" required />
+        <input type="text" th:field="*{author.name}" class="form-control mb-4 col-4" placeholder="Author" required />
 
         <hr>
-        <a th:href="@{/books/list}">Back to Books List</a>
-    </div>
+        <b>Type the characters</b>
+        <br><br>
+        <i>One of the characters must be 'main'</i>
+        <br><br>
+
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Role</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td><input th:field="*{characters[0].name}" placeholder="First Character Name" required /></td>
+                <td>
+                    <select th:field="*{characters[0].role}" required>
+                        <option value="main" th:text="'main'" selected>Main</option>
+                        <option value="secondary" th:text="'secondary'">Secondary</option>
+                        <option value="episodical" th:text="'episodical'">Episodical</option>
+                    </select>
+                </td>
+            </tr>
+
+            <tr>
+                <td><input th:field="*{characters[1].name}" placeholder="Second Character Name" /></td>
+                <td>
+                    <select th:field="*{characters[1].role}">
+                        <option value="secondary" th:text="'secondary'" selected>Secondary</option>
+                        <option value="episodical" th:text="'episodical'">Episodical</option>
+                    </select>
+                </td>
+            </tr>
+
+            </tbody>
+        </table>
+
+        <hr>
+
+        <button type="submit" class="btn btn-info col-2">Save</button>
+    </form>
+
+    <hr>
+    <a th:href="@{/books/list}">Back to Books List</a>
+</div>
 
 </body>
 
