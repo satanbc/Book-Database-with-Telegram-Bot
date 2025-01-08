@@ -24,7 +24,7 @@
 
         <!-- Book Fields -->
         <input type="text" th:field="*{name}" class="form-control mb-4 col-4" placeholder="Name" required />
-        <input type="number" th:field="*{release_year}" class="form-control mb-4 col-4" placeholder="Release year" required />
+        <input type="number" th:field="*{release_year}" class="form-control mb-4 col-4" placeholder="Release year" min="0" max="2025" required />
         <input type="number" th:field="*{page_count}" class="form-control mb-4 col-4" placeholder="Page count" required />
         <b>Type the rating 0-10</b>
         <input type="number" th:field="*{rating}" class="form-control mb-4 col-4" placeholder="Rating" min="0" max="10" required />
@@ -50,6 +50,15 @@
                 <td>
                     <select th:field="*{characters[0].role}" required>
                         <option value="main" th:text="'main'" selected>Main</option>
+                    </select>
+                </td>
+            </tr>
+
+            <tr>
+                <td><input th:field="*{characters[1].name}" placeholder="Second Character Name" required /></td>
+                <td>
+                    <select th:field="*{characters[1].role}" required>
+                        <option value="main" th:text="'main'" selected>Main</option>
                         <option value="secondary" th:text="'secondary'">Secondary</option>
                         <option value="episodical" th:text="'episodical'">Episodical</option>
                     </select>
@@ -57,10 +66,11 @@
             </tr>
 
             <tr>
-                <td><input th:field="*{characters[1].name}" placeholder="Second Character Name" /></td>
+                <td><input th:field="*{characters[2].name}" placeholder="Third Character Name" required /></td>
                 <td>
-                    <select th:field="*{characters[1].role}">
-                        <option value="secondary" th:text="'secondary'" selected>Secondary</option>
+                    <select th:field="*{characters[2].role}" required>
+                        <option value="main" th:text="'main'" selected>Main</option>
+                        <option value="secondary" th:text="'secondary'">Secondary</option>
                         <option value="episodical" th:text="'episodical'">Episodical</option>
                     </select>
                 </td>

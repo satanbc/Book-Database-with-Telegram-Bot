@@ -187,11 +187,21 @@ public class BookController {
 		return "redirect:/books/list";
 	}
 
-
-
 	@GetMapping("/delete")
 	public  String delete(@RequestParam("bookId") int theId){
 
+		deletion(theId);
+
+		return "redirect:/books/list";
+	}
+
+	@Transactional
+	public void deleteWithBot(@RequestParam("bookId") int theId){
+
+		deletion(theId);
+	}
+
+	private void deletion(int theId) {
 		Book theBook = bookService.findById(theId);
 		Series theSeries = seriesService.findById(theBook.getSeries().getId());
 		Author theAuthor = authorService.findById(theBook.getAuthor().getId());
@@ -202,10 +212,10 @@ public class BookController {
 
 		bookService.deleteById(theId);
 
-		if (theSeries.getBooks().size() < 1)
+		if (theSeries.getBooks().isEmpty())
 			seriesService.deleteById(seriesId);
 
-		if (theAuthor.getBooks().size() < 1)
+		if (theAuthor.getBooks().isEmpty())
 			authorService.deleteById(authorId);
 
 		try{
@@ -215,11 +225,7 @@ public class BookController {
 		}catch (EmptyResultDataAccessException e){
 
 		}
-
-		return "redirect:/books/list";
 	}
-
-
 
 	@GetMapping("/insertionSort")
 	public String insertionSort(Model theModel){

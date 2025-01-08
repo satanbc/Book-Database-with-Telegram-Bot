@@ -26,6 +26,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 @Component
@@ -95,30 +96,34 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     throw new RuntimeException(e);
                 }
             }
-            if (msg.getText().trim().equals("Отримати список книжок")){
+            if (msg.getText().trim().equals("Отримати список книжок")) {
                 sendMessage.setChatId(msg.getChatId());
-                List<Book> l = bookService.findAll();
-                sendMessage.setText(l.toString());
 
-                try {
-                    execute(sendMessage);
-                } catch (TelegramApiException e) {
-                    throw new RuntimeException(e);
+                List<Book> books = bookService.findAll();
+
+                StringBuilder table = new StringBuilder();
+                table.append(" # | Назва           | Автор\n");
+                table.append("--------------------------------------\n");
+
+                for (Book book : books) {
+                    table.append(String.format("%2d | %-15s | %-15s\n",
+                            book.getId(),
+                            book.getName().length() > 15 ? book.getName().substring(0, 12) + "..." : book.getName(),
+                            book.getAuthor().getName().length() > 15 ? book.getAuthor().getName().substring(0, 12) + "..." : book.getAuthor().getName()));
                 }
 
-                ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-                List<KeyboardRow> rowsReply = new ArrayList<>();
-                KeyboardRow rowReply = new KeyboardRow();
-                rowReply.add("Додати книгу");
-                rowReply.add("Отримати список книжок");
-                rowReply.add("Видалити книгу за номером");
-                rowReply.add("Знайти книгу за назвою");
-                rowsReply.add(rowReply);
-                replyKeyboardMarkup.setKeyboard(rowsReply);
+                if (table.length() > 0) {
+                    sendMessage.setText("```" + table.toString() + "```");
+                    sendMessage.setParseMode("Markdown");
+                    try {
+                        execute(sendMessage);
+                    } catch (TelegramApiException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
 
-                sendMessage.setChatId(msg.getChatId());
-                sendMessage.setText("Доступні функції: ");
-                sendMessage.setReplyMarkup(replyKeyboardMarkup);
+                menu(sendMessage);
+
                 try {
                     execute(sendMessage);
                 } catch (TelegramApiException e) {
@@ -142,39 +147,29 @@ public class BookManagerBot extends TelegramLongPollingBot {
                         check = true;
                 }
 
-                if (check){
-                    sendMessage.setText("Видалено книгу №" + id);
+                if (check) {
                     deleteAction = false;
-                    bookController.delete(id);
-                }else
+                    bookController.deleteWithBot(id);
+                    sendMessage.setText("Видалено книгу №" + id);
+                    try {
+                        execute(sendMessage);
+                    } catch (TelegramApiException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    menu(sendMessage);
+                } else {
                     sendMessage.setText("INVALID NUMBER");
                     deleteAction = true;
-
-                try {
-                    execute(sendMessage);
-                } catch (TelegramApiException e) {
-                    throw new RuntimeException(e);
                 }
 
-                ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-                List<KeyboardRow> rowsReply = new ArrayList<>();
-                KeyboardRow rowReply = new KeyboardRow();
-                rowReply.add("Додати книгу");
-                rowReply.add("Отримати список книжок");
-                rowReply.add("Видалити книгу за номером");
-                rowReply.add("Знайти книгу за назвою");
-                rowsReply.add(rowReply);
-                replyKeyboardMarkup.setKeyboard(rowsReply);
-
-                sendMessage.setChatId(msg.getChatId());
-                sendMessage.setText("Доступні функції: ");
-                sendMessage.setReplyMarkup(replyKeyboardMarkup);
                 try {
                     execute(sendMessage);
                 } catch (TelegramApiException e) {
                     throw new RuntimeException(e);
                 }
             }
+
 
             if (findAction){
                 sendMessage.setChatId(msg.getChatId());
@@ -192,19 +187,7 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     throw new RuntimeException(e);
                 }
 
-                ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-                List<KeyboardRow> rowsReply = new ArrayList<>();
-                KeyboardRow rowReply = new KeyboardRow();
-                rowReply.add("Додати книгу");
-                rowReply.add("Отримати список книжок");
-                rowReply.add("Видалити книгу за номером");
-                rowReply.add("Знайти книгу за назвою");
-                rowsReply.add(rowReply);
-                replyKeyboardMarkup.setKeyboard(rowsReply);
-
-                sendMessage.setChatId(msg.getChatId());
-                sendMessage.setText("Доступні функції: ");
-                sendMessage.setReplyMarkup(replyKeyboardMarkup);
+                menu(sendMessage);
                 try {
                     execute(sendMessage);
                 } catch (TelegramApiException e) {
@@ -240,18 +223,8 @@ public class BookManagerBot extends TelegramLongPollingBot {
 
             if (msg.getText().trim().equals("/functions")) {
                 sendMessage.setChatId(msg.getChatId());
-                sendMessage.setText("Доступні функції: ");
 
-                ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-                List<KeyboardRow> rowsReply = new ArrayList<>();
-                KeyboardRow rowReply = new KeyboardRow();
-                rowReply.add("Додати книгу");
-                rowReply.add("Отримати список книжок");
-                rowReply.add("Видалити книгу за номером");
-                rowReply.add("Знайти книгу за назвою");
-                rowsReply.add(rowReply);
-                replyKeyboardMarkup.setKeyboard(rowsReply);
-                sendMessage.setReplyMarkup(replyKeyboardMarkup);
+                menu(sendMessage);
 
                 try {
                     execute(sendMessage);
@@ -336,7 +309,7 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     book.setDescription(msg.getText());
 
                     sendMessage.setChatId(msg.getChatId());
-                    sendMessage.setText("Введіть рейтинг: від 0 до 100");
+                    sendMessage.setText("Введіть рейтинг: від 0 до 10");
 
                     try {
                         execute(sendMessage);
@@ -421,19 +394,7 @@ public class BookManagerBot extends TelegramLongPollingBot {
                     state = BotState.STEP_0;
 
                     sendMessage.setChatId(msg.getChatId());
-                    sendMessage.setText("Доступні функції: ");
-                    ReplyKeyboardMarkup replyKeyboardMarkup2 = new ReplyKeyboardMarkup();
-                    List<KeyboardRow> rowsReply2 = new ArrayList<>();
-                    KeyboardRow rowReply2 = new KeyboardRow();
-
-                    rowReply2.add("Додати книгу");
-                    rowReply2.add("Отримати список книжок");
-                    rowReply2.add("Видалити книгу за номером");
-                    rowReply2.add("Знайти книгу за назвою");
-
-                    rowsReply2.add(rowReply2);
-                    replyKeyboardMarkup2.setKeyboard(rowsReply2);
-                    sendMessage.setReplyMarkup(replyKeyboardMarkup2);
+                    menu(sendMessage);
                     try {
                         execute(sendMessage);
                     } catch (TelegramApiException e) {
@@ -443,6 +404,21 @@ public class BookManagerBot extends TelegramLongPollingBot {
                 }
             }
         }
+
+    private static void menu(SendMessage sendMessage) {
+        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> rowsReply = new ArrayList<>();
+        KeyboardRow rowReply = new KeyboardRow();
+        rowReply.add("Додати книгу");
+        rowReply.add("Отримати список книжок");
+        rowReply.add("Видалити книгу за номером");
+        rowReply.add("Знайти книгу за назвою");
+        rowsReply.add(rowReply);
+        replyKeyboardMarkup.setKeyboard(rowsReply);
+
+        sendMessage.setText("Доступні функції: ");
+        sendMessage.setReplyMarkup(replyKeyboardMarkup);
+    }
 
     @Override
     public String getBotUsername() {
