@@ -18,7 +18,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.query.Query;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -223,6 +222,47 @@ public class BookController {
 
 		return "redirect:/books/list";
 	}
+
+	public void deleteByBot(int theId) {
+		Session session = factory.openSession();
+		session.beginTransaction();
+		try {
+			Book theBook = session.get(Book.class, theId);
+			Series theSeries = theBook.getSeries();
+			Author theAuthor = theBook.getAuthor();
+			List<Character> characterList = theBook.getCharacters();
+
+			session.delete(theBook);
+
+			if (theSeries.getBooks().isEmpty()) {
+				session.delete(theSeries);
+			}
+
+			if (theAuthor.getBooks().isEmpty()) {
+				session.delete(theAuthor);
+			}
+
+			for (Character character : characterList) {
+				try {
+					session.delete(character);
+				} catch (EmptyResultDataAccessException e) {
+
+				}
+			}
+
+			session.getTransaction().commit();
+		} catch (Exception e) {
+			if (session.getTransaction() != null) {
+				session.getTransaction().rollback();
+			}
+			throw e;
+		} finally {
+			session.close();
+		}
+
+		resetAutoIncrement();
+	}
+
 
 	@GetMapping("/insertionSort")
 	public String insertionSort(Model theModel){
