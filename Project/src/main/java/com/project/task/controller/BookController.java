@@ -35,7 +35,10 @@ public class BookController {
 	private final SeriesService seriesService;
 	private final AuthorService authorService;
 	private final CharacterService characterService;
-	
+
+	@Autowired
+	private SessionFactory sessionFactory;
+
 	public BookController(BookService bookService, SeriesService seriesService, AuthorService authorService, CharacterService characterService) {
 		this.bookService = bookService;
 		this.seriesService = seriesService;
@@ -190,7 +193,7 @@ public class BookController {
 	}
 
 	@GetMapping("/delete")
-	public  String delete(@RequestParam("bookId") int theId){
+	public String delete(@RequestParam("bookId") int theId){
 
 		Book theBook = bookService.findById(theId);
 		Series theSeries = seriesService.findById(theBook.getSeries().getId());
@@ -204,23 +207,21 @@ public class BookController {
 
 		if (theSeries.getBooks().isEmpty())
 			seriesService.deleteById(seriesId);
-
 		if (theAuthor.getBooks().isEmpty())
 			authorService.deleteById(authorId);
 
-		try{
+		try {
 			for (Character character : characterList){
 				characterService.deleteById(character.getId());
 			}
-		}catch (EmptyResultDataAccessException e){
+		} catch (EmptyResultDataAccessException e){
 
 		}
 
+		resetAutoIncrement();
+
 		return "redirect:/books/list";
 	}
-
-	@Autowired
-	private SessionFactory sessionFactory;
 
 	public void deleteWithBot(int theId) {
 		Session session = sessionFactory.openSession();
@@ -228,12 +229,9 @@ public class BookController {
 
 		try {
 			Book theBook = session.get(Book.class, theId);
-
 			Series theSeries = theBook.getSeries();
 			Hibernate.initialize(theSeries.getBooks());
-
 			Author theAuthor = theBook.getAuthor();
-
 			List<Character> characterList = theBook.getCharacters();
 
 			session.delete(theBook);
@@ -254,16 +252,16 @@ public class BookController {
 				}
 			}
 
-			// Commit the transaction
 			session.getTransaction().commit();
+
+			resetAutoIncrement();
+
 		} catch (Exception e) {
-			// If an error occurs, roll back the transaction
 			if (session.getTransaction() != null) {
 				session.getTransaction().rollback();
 			}
-			throw e;  // Rethrow the exception after rolling back the transaction
+			throw e;
 		} finally {
-			// Make sure to close the session regardless of success or failure
 			session.close();
 		}
 	}
@@ -340,13 +338,36 @@ public class BookController {
 
 		return "books/list-books-sorted";
 	}
+
+	private void resetAutoIncrement() {
+		Session session = sessionFactory.openSession();
+		session.beginTransaction();
+		try {
+			Integer lastBookId = (Integer) session.createNativeQuery("SELECT MAX(id) FROM book").getSingleResult();
+			Integer lastSeriesId = (Integer) session.createNativeQuery("SELECT MAX(id) FROM series").getSingleResult();
+			Integer lastCharacterId = (Integer) session.createNativeQuery("SELECT MAX(id) FROM `character`").getSingleResult();
+			Integer lastAuthorId = (Integer) session.createNativeQuery("SELECT MAX(id) FROM author").getSingleResult();
+
+			if (lastBookId != null) {
+				session.createNativeQuery("ALTER TABLE book AUTO_INCREMENT = " + (lastBookId + 1)).executeUpdate();
+			}
+			if (lastSeriesId != null) {
+				session.createNativeQuery("ALTER TABLE series AUTO_INCREMENT = " + (lastSeriesId + 1)).executeUpdate();
+			}
+			if (lastCharacterId != null) {
+				session.createNativeQuery("ALTER TABLE `character` AUTO_INCREMENT = " + (lastCharacterId + 1)).executeUpdate();
+			}
+			if (lastAuthorId != null) {
+				session.createNativeQuery("ALTER TABLE author AUTO_INCREMENT = " + (lastAuthorId + 1)).executeUpdate();
+			}
+
+			session.getTransaction().commit();
+		} catch (Exception e) {
+			session.getTransaction().rollback();
+			throw e;
+		} finally {
+			session.close();
+		}
+	}
+
 }
-
-
-
-
-
-
-
-
-
