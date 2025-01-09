@@ -35,7 +35,7 @@ CREATE TABLE `author` (
 
 LOCK TABLES `author` WRITE;
 /*!40000 ALTER TABLE `author` DISABLE KEYS */;
-INSERT INTO `author` VALUES (1,'J.K. Rowling'),(2,'George R.R. Martin'),(3,'J.R.R. Tolkien'),(4,'Mark Twain'),(5,'Agatha Christie'),(6,'Isaac Asimov'),(16,'dfgdrgdfgdrg'),(17,'sdrgdfg'),(18,'Максим Марцинкевич'),(19,'Kamari’s'),(24,'hjkhjk'),(25,'asdfasef');
+INSERT INTO `author` VALUES (1,'J.K. Rowling'),(2,'George R.R. Martin'),(3,'J.R.R. Tolkien'),(4,'Mark Twain'),(5,'Agatha Christie'),(6,'Isaac Asimov');
 /*!40000 ALTER TABLE `author` ENABLE KEYS */;
 UNLOCK TABLES;
 
