@@ -145,7 +145,7 @@ public class BookManagerBot extends TelegramLongPollingBot {
 
                 if (check) {
                     deleteAction = false;
-                    bookController.deleteWithBot(id);
+                    bookController.delete(id);
                     sendMessage.setText("Видалено книгу №" + id);
                     try {
                         execute(sendMessage);

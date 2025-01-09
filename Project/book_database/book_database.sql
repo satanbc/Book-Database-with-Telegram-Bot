@@ -26,7 +26,7 @@ CREATE TABLE `author` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(45) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -60,7 +60,7 @@ CREATE TABLE `book` (
   KEY `fk_book_author1` (`author_id`),
   CONSTRAINT `fk_book_author1` FOREIGN KEY (`author_id`) REFERENCES `author` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_book_series1` FOREIGN KEY (`series_id`) REFERENCES `series` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -112,7 +112,7 @@ CREATE TABLE `character` (
   `name` varchar(45) NOT NULL,
   `role` varchar(45) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -139,7 +139,7 @@ CREATE TABLE `series` (
   PRIMARY KEY (`id`,`author_id`),
   KEY `fk_series_author1` (`author_id`),
   CONSTRAINT `fk_series_author1` FOREIGN KEY (`author_id`) REFERENCES `author` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -148,7 +148,7 @@ CREATE TABLE `series` (
 
 LOCK TABLES `series` WRITE;
 /*!40000 ALTER TABLE `series` DISABLE KEYS */;
-INSERT INTO `series` VALUES (1,'Harry Potter',1),(2,'A Song of Ice and Fire',2),(3,'The Lord of the Rings',3),(4,'The Adventures of Huckleberry Finn',4),(5,'Murder on the Orient Express',5),(6,'Foundation',6),(16,'gyhjgyjgh adventures',16),(17,'hjiljhkl adventures',17),(18,'ЕБАШИТЕЛЬ adventures',18),(19,'main adventures',19),(24,'main adventures',24),(25,'main adventures',25);
+INSERT INTO `series` VALUES (1,'Harry Potter',1),(2,'A Song of Ice and Fire',2),(3,'The Lord of the Rings',3),(4,'The Adventures of Huckleberry Finn',4),(5,'Murder on the Orient Express',5),(6,'Foundation',6);
 /*!40000 ALTER TABLE `series` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -161,4 +161,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-01-09 13:11:42
+-- Dump completed on 2025-01-09 21:52:01

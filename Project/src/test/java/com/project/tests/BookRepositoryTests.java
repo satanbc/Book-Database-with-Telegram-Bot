@@ -7,10 +7,10 @@ import com.project.task.Entities.Series;
 import com.project.task.Application;
 import com.project.task.dao.AuthorRepository;
 import com.project.task.dao.BookRepository;
-import com.project.task.dao.CharacterRepository;
 import com.project.task.dao.SeriesRepository;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,11 +29,13 @@ public class BookRepositoryTests {
     @Autowired
     private SeriesRepository seriesRepository;
 
-    @Autowired
-    private CharacterRepository characterRepository;
-
-    @Autowired
-    private SessionFactory sessionFactory;
+    SessionFactory factory = new Configuration()
+            .configure()
+            .addAnnotatedClass(Author.class)
+            .addAnnotatedClass(Series.class)
+            .addAnnotatedClass(Book.class)
+            .addAnnotatedClass(Character.class)
+            .buildSessionFactory();
 
     @Test
     public void testSaveAndDeleteBook() {
@@ -112,7 +114,7 @@ public class BookRepositoryTests {
     }
 
     private void resetAutoIncrement() {
-        Session session = sessionFactory.openSession();
+        Session session = factory.openSession();
         session.beginTransaction();
         try {
             Integer lastBookId = (Integer) session.createNativeQuery("SELECT MAX(id) FROM book").getSingleResult();

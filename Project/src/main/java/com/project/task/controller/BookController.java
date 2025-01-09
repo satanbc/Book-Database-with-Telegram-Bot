@@ -36,8 +36,13 @@ public class BookController {
 	private final AuthorService authorService;
 	private final CharacterService characterService;
 
-	@Autowired
-	private SessionFactory sessionFactory;
+	SessionFactory factory = new Configuration()
+			.configure()
+			.addAnnotatedClass(Author.class)
+			.addAnnotatedClass(Series.class)
+			.addAnnotatedClass(Book.class)
+			.addAnnotatedClass(Character.class)
+			.buildSessionFactory();
 
 	public BookController(BookService bookService, SeriesService seriesService, AuthorService authorService, CharacterService characterService) {
 		this.bookService = bookService;
@@ -106,14 +111,7 @@ public class BookController {
 		List<Integer> characterIdList1 = new ArrayList<>();
 		List<Character> characterList = new ArrayList<>();
 
-		SessionFactory factory = new Configuration()
-				.configure()
-				.addAnnotatedClass(Author.class)
-				.addAnnotatedClass(Series.class)
-				.addAnnotatedClass(Book.class)
-				.addAnnotatedClass(Character.class)
-				.buildSessionFactory();
-		Session session = factory.getCurrentSession();
+		Session session = factory.openSession();
 		session.beginTransaction();
 
 		try {
@@ -134,7 +132,7 @@ public class BookController {
 
 			characterIdList1.addAll(characterIdList2);
 		} catch (NoResultException e) {
-
+			// Handle exception
 		}
 
 		for (int m : characterIdList1) {
@@ -189,6 +187,9 @@ public class BookController {
 
 		bookService.save(theBook);
 
+		session.getTransaction().commit();
+		session.close();
+
 		return "redirect:/books/list";
 	}
 
@@ -222,50 +223,6 @@ public class BookController {
 
 		return "redirect:/books/list";
 	}
-
-	public void deleteWithBot(int theId) {
-		Session session = sessionFactory.openSession();
-		session.beginTransaction();
-
-		try {
-			Book theBook = session.get(Book.class, theId);
-			Series theSeries = theBook.getSeries();
-			Hibernate.initialize(theSeries.getBooks());
-			Author theAuthor = theBook.getAuthor();
-			List<Character> characterList = theBook.getCharacters();
-
-			session.delete(theBook);
-
-			if (theSeries.getBooks().isEmpty()) {
-				session.delete(theSeries);
-			}
-
-			if (theAuthor.getBooks().isEmpty()) {
-				session.delete(theAuthor);
-			}
-
-			for (Character character : characterList) {
-				try {
-					session.delete(character);
-				} catch (EmptyResultDataAccessException e) {
-
-				}
-			}
-
-			session.getTransaction().commit();
-
-			resetAutoIncrement();
-
-		} catch (Exception e) {
-			if (session.getTransaction() != null) {
-				session.getTransaction().rollback();
-			}
-			throw e;
-		} finally {
-			session.close();
-		}
-	}
-
 
 	@GetMapping("/insertionSort")
 	public String insertionSort(Model theModel){
@@ -340,7 +297,7 @@ public class BookController {
 	}
 
 	private void resetAutoIncrement() {
-		Session session = sessionFactory.openSession();
+		Session session = factory.openSession();
 		session.beginTransaction();
 		try {
 			Integer lastBookId = (Integer) session.createNativeQuery("SELECT MAX(id) FROM book").getSingleResult();
@@ -369,5 +326,4 @@ public class BookController {
 			session.close();
 		}
 	}
-
 }
