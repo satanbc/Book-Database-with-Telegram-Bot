@@ -2,6 +2,7 @@ package com.project.task.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.project.task.Entities.Author;
@@ -13,7 +14,6 @@ import com.project.task.service.BookService;
 import com.project.task.service.CharacterService;
 import com.project.task.service.SeriesService;
 import com.project.task.sorting.Sorting;
-import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
@@ -23,8 +23,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import javax.persistence.NoResultException;
 
 @Controller
 @RequestMapping("/books")
@@ -98,96 +96,64 @@ public class BookController {
 	@Transactional
 	@PostMapping("/save")
 	public String saveBook(@ModelAttribute("book") Book theBook) {
-
-		int index = -1;
-		boolean isMainCharacterNew = true;
-		String authorName = theBook.getAuthor().getName();
-
-		Author tempAuthor;
-		Series series = new Series("Not in any series");
-		Series tempSeriesObject = null;
-
-		List<Integer> characterIdList1 = new ArrayList<>();
-		List<Character> characterList = new ArrayList<>();
-
-		Session session = factory.openSession();
-		session.beginTransaction();
-
-		try {
-			Query<Integer> query1 = session.createQuery("select author.id from Author author where author.name=:name");
-			query1.setParameter("name", authorName);
-			index = query1.getSingleResult();
-		} catch (NoResultException e) {
-
+		if (theBook == null || theBook.getAuthor() == null || theBook.getAuthor().getName() == null || theBook.getAuthor().getName().trim().isEmpty()) {
+			throw new IllegalArgumentException("Invalid book or author details provided.");
 		}
 
-		try {
-			Query<Integer> query2 = session.createQuery("select character.id from Character character where character.role=:role");
-			query2.setParameter("role", "main");
-			characterIdList1 = query2.getResultList();
+		String authorName = theBook.getAuthor().getName().trim();
+		Author author;
+		Series series;
 
-			query2.setParameter("role", "secondary");
-			List<Integer> characterIdList2 = query2.getResultList();
+		try (Session session = factory.openSession()) {
+			session.beginTransaction();
 
-			characterIdList1.addAll(characterIdList2);
-		} catch (NoResultException e) {
-			// Handle exception
-		}
+			Query<Author> authorQuery = session.createQuery("from Author where name = :name", Author.class);
+			authorQuery.setParameter("name", authorName);
+			author = authorQuery.uniqueResult();
 
-		for (int m : characterIdList1) {
-			Character character = characterService.findById(m);
-			if (character != null && character.getName() != null && !character.getName().isEmpty() && character.getRole() != null && !character.getRole().isEmpty()) {
-				characterList.add(character);
+			if (author == null) {
+				author = new Author(authorName);
+				session.save(author);
 			}
-		}
 
-		if (index == -1) {
-			tempAuthor = new Author(authorName);
-		} else {
-			tempAuthor = authorService.findById(index);
-		}
+			List<Character> validCharacters = theBook.getCharacters().stream()
+					.filter(character -> character.getName() != null && !character.getName().trim().isEmpty() && character.getRole() != null && !character.getRole().trim().isEmpty())
+					.collect(Collectors.toList());
 
-		for (Character cha : characterList) {
-			for (int t = 0; t < theBook.getCharacters().size(); t++) {
-				if (cha.getName().equals(theBook.getCharacters().get(t).getName())) {
-					tempSeriesObject = cha.getBooks().get(0).getSeries();
-					isMainCharacterNew = false;
-					break;
+			theBook.setCharacters(validCharacters);
+
+			Optional<Character> mainCharacter = validCharacters.stream()
+					.filter(character -> character.getRole().equalsIgnoreCase("main") || character.getRole().equalsIgnoreCase("secondary"))
+					.findFirst();
+
+			if (mainCharacter.isPresent()) {
+				String seriesName = mainCharacter.get().getName() + " adventures";
+				Query<Series> seriesQuery = session.createQuery("from Series where name = :name", Series.class);
+				seriesQuery.setParameter("name", seriesName);
+				series = seriesQuery.uniqueResult();
+
+				if (series == null) {
+					series = new Series(seriesName);
+					series.setAuthor(author);
+					session.save(series);
 				}
+			} else {
+				series = new Series("Not in any series");
+				session.save(series);
 			}
+
+			theBook.setAuthor(author);
+			theBook.setSeries(series);
+			author.addBook(theBook);
+			series.addBook(theBook);
+
+			session.saveOrUpdate(theBook);
+
+			session.getTransaction().commit();
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Failed to save the book.", e);
 		}
-
-		if (isMainCharacterNew) {
-			for (int t = 0; t < theBook.getCharacters().size(); t++) {
-				if (theBook.getCharacters().get(t).getRole().equals("main") || theBook.getCharacters().get(t).getRole().equals("secondary")) {
-					String name = theBook.getCharacters().get(t).getName();
-					if (name != null && !name.trim().isEmpty()) {
-						series = new Series(name + " adventures");
-						tempAuthor.addSeries(series);
-						authorService.save(tempAuthor);
-						series.setAuthor(tempAuthor);
-						series.addBook(theBook);
-						seriesService.save(series);
-						break;
-					}
-				}
-			}
-		} else {
-			series = tempSeriesObject;
-		}
-
-		theBook.setCharacters(theBook.getCharacters().stream()
-				.filter(character -> character.getName() != null && !character.getName().trim().isEmpty())
-				.collect(Collectors.toList()));
-
-		tempAuthor.addBook(theBook);
-		theBook.setAuthor(tempAuthor);
-		theBook.setSeries(series);
-
-		bookService.save(theBook);
-
-		session.getTransaction().commit();
-		session.close();
 
 		return "redirect:/books/list";
 	}
@@ -234,11 +200,11 @@ public class BookController {
 
 			session.delete(theBook);
 
-			if (theSeries.getBooks().isEmpty()) {
+			if (theSeries.getBooks().size() <= 1) {
 				session.delete(theSeries);
 			}
 
-			if (theAuthor.getBooks().isEmpty()) {
+			if (theAuthor.getBooks().size() <= 1) {
 				session.delete(theAuthor);
 			}
 
